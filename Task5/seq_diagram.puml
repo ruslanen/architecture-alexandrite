@@ -1,0 +1,27 @@
+@startuml
+actor Operator
+
+participant MES
+participant "Redis Cache" as Cache
+participant "Database (Postgres)" as DB
+
+== Чтение списка заказов ==
+
+Operator -> MES : Запрос списка заказов
+MES -> Cache : Проверка наличия в кеше
+alt Данные найдены
+    Cache --> MES : Вернуть список заказов
+else Данных нет
+    MES -> DB : Запрос списка заказов
+    DB --> MES : Вернуть список заказов
+    MES -> Cache : Сохранить список заказов в кеш
+end
+MES --> Operator : Отобразить список заказов
+
+== Обновление статуса заказа ==
+
+Operator -> MES : Изменение статуса заказа
+MES -> DB : Обновить статус заказа
+DB --> MES : Подтверждение обновления
+MES -> Cache : Инвалидировать или обновить кеш записи
+@enduml
