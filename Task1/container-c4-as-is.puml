@@ -1,0 +1,56 @@
+@startuml
+
+title Диаграмма контейнеров системы "Александрит"
+
+left to right direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(customer, "Клиент", "Использует веб-сайт для покупки или оценки изделий")
+Person(seller, "Продавец", "Управляет заказами, подтверждает производство изделий")
+Person(api_user, "Клиент API", "Используется сторонними торговыми площадками для расчетов изделий")
+Person(opeartor, "Оператор", "Отправляет заказы в производство")
+
+Container_Boundary(shop_boundary, "Shop Boundary") {
+  Container(internet_shop, "Internet Shop", "Vue, TypeScript, ThreeJS", "Используется клиентами для создания заказов, загрузки моделей, работе в 3D редакторе")
+  Container(shop_api, "Shop API", "SpringBoot", "Предоставляет список заказов, получает список заказов пользователей и 3D моделей, сохраняет информацию пользователей о заказе")
+  ContainerDb(shop_db, "Shop DB", "PostgreSQL", "Хранит данные о пользователях и их заказах")
+  
+  Container(crm, "CRM", "Vue, TypeScript", "Предоставляет веб-сайт для работы с клиентами")
+  Container(crm_api, "CRM API", "SpringBoot", "API для работы с клиентами")
+}
+
+Container(file_storage, "Хранилище 3D моделей", "S3-based storage", "Хранит файлы 3D-моделей изделий для расчетов")
+Container(message_broker, "Message Queue", "RabbitMQ", "Обеспечивает очередь сообщений о новых заказах, изменения статусов между сервисами, имеет несколько топиков")
+
+
+Container_Boundary(mes_boundary, "MES Boundary") {
+  Container(mes, "Internet Shop", "React, TypeScript", "Предоставляет интерфейс назначения заказов операторам и показ списка заказов")
+  Container(mes_api, "Shop API", "C#", "Содержит логику назначения заказрв операторам, управляет заказами, вычисляет стоимость заказа по моделям")
+  ContainerDb(mes_db, "Shop DB", "PostgreSQL", "Хранит информацию о заказах, назначениях операторов заказам и статус обработки заказа в MES")
+}
+
+Rel(customer, internet_shop, "Оформляет заказ")
+Rel(seller, crm, "Подтверждает заказ")
+
+Rel(internet_shop, shop_api, "")
+Rel(shop_api, shop_db, "")
+Rel(shop_api, file_storage, "")
+
+Rel(crm, crm_api, "")
+Rel(crm_api, shop_db, "")
+Rel(crm_api, message_broker, "")
+Rel(crm_api, file_storage, "")
+
+Rel(message_broker, crm_api, "")
+Rel(message_broker, mes_api, "")
+
+Rel(api_user, mes_api, "Вычисляет стоимость изделия")
+Rel(opeartor, mes, "Осуществляет прием заказа в производство")
+Rel(mes, mes_api, "")
+Rel(mes_api, mes_db, "")
+Rel(mes_api, message_broker, "")
+Rel(mes_api, file_storage, "")
+
+SHOW_LEGEND()
+@enduml
